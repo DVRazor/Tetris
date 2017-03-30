@@ -1,0 +1,33 @@
+#game-container{
+	display:flex;
+	flex-direction: column;
+	margin-top: 20px;
+}
+
+#gameCanvas{
+	padding: 0;
+    margin: auto;
+    display: block;   
+}
+.playButtons{
+	display:block;
+	margin: 0 auto;
+	display:flex;
+	justify-content: center;
+}
+.playButton{
+	margin: 10px;
+	font-size: 1.5rem;
+}
+.score{	
+	text-align: center;
+	text-transform: uppercase;	
+	font-size: 1.5rem;
+}
+.score p{
+	margin: 0;
+}
+
+#play, #new{
+	display: none;
+}

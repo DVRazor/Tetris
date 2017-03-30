@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+
+	<head>
+		<title>Tetris</title>
+		<meta charset="utf-8">
+		<link rel='stylesheet' href='css/main.css'>
+	</head>
+	
+	<body>
+		<div id='game-container'>
+
+			<canvas id='gameCanvas' width="450" height = "750"></canvas>
+
+			<div class='playButtons'>
+				<button id='start' class='playButton'>Start</button>				
+				<button id='pause' class='playButton'>Pause</button>
+				<button id='play' class='playButton'>Play</button>
+			</div>
+
+			<div class='score'>
+				<p>score</p>
+				<p id='score'>0</p>
+			</div>
+
+		</div>
+
+		<script src='https://code.jquery.com/jquery-3.2.1.min.js'></script>
+		<script src="https://code.createjs.com/easeljs-0.8.2.min.js"></script>
+		<script src="https://code.createjs.com/preloadjs-0.6.2.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.1/plugins/CSSPlugin.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.1/easing/EasePack.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.1/TweenLite.min.js"></script>
+		<script src="js/AssetManager.js"></script>
+		<script src="js/Render.js"></script>
+		<script src='js/Tetris.js'></script>
+		<script src='js/main.js'></script>
+		<!-- <script>
+			var start = document.getElementById('start');
+			start.style.position = 'fixed';
+			var tween = TweenLite.to(start, 1, {left:"+=52px", ease:Linear.easeNone, delay:1, color:"red", borderColor:'orange', opacity: 0.5});
+			setInterval(tween.restart.bind(tween), 3000);
+		</script> -->
+
+	</body>
+
+</html>
