@@ -20,6 +20,8 @@ function Tetris(){
 
 	var pressed_keys = {};		
 
+	var canMoveLeftRight = true;
+
 	var glass = [];
 
     for(var i = 0; i < GLASS_HEIGHT; i++){
@@ -31,7 +33,9 @@ function Tetris(){
 
 	var is_paused = false;	
 
-	var figure_current = {};
+	var figure_current;
+
+	var figure_next;
 
 	var time_passed = 0;		
 	
@@ -132,7 +136,7 @@ function Tetris(){
 */
 
 	var _startGame = function(){											
-		createFigure();						
+		updateFigures();					
 		setKeyEventListeners();					
 		clearInterval(gameTimer);					
 		gameStep();
@@ -184,7 +188,7 @@ function Tetris(){
             if (glass[i].every(function(v){return v != null})){
                 // remove blocks from glass in Render and put to AM
                 for(var k = 0; k < glass[i].length; k++){
-                    render.removeBlock(glass[i][k]);
+                    render.removeBlockFromGlass(glass[i][k]);
                 }
                 // for each row, replace it with the above row
 				for(var j = i - 1; j >= 0; j--){
@@ -194,6 +198,7 @@ function Tetris(){
                     for(var l = 0; l < glass[i].length; l++){                        
                         if(glass[j+1][l]){
                             glass[j+1][l].row = j+1;
+                            glass[j+1][l].needsUpdate = true;
                         }
                     }
 
@@ -224,36 +229,49 @@ function Tetris(){
 
 	*/	
 	function gameStep(){			
-		gameTimer = setInterval(function(){																	
-			// arrow left
-			if(pressed_keys[37] && !pressed_keys[39]){
-				if (moveFigure(-1, 0)) pressed_keys[37] = false;
-			}
-			// arrow right
-			if(!pressed_keys[37] && pressed_keys[39]){
-				if (moveFigure(1, 0)) pressed_keys[39] = false;
-			}		
+		gameTimer = setInterval(function(){				
+			// if left and right not pressed together
+			if(!(pressed_keys[37] && pressed_keys[39])){
+				// arrow left
+				if(pressed_keys[37]){
+					if(canMoveLeftRight){
+						moveFigure(-1, 0);
+						canMoveLeftRight = false;
+						setTimeout(function(){canMoveLeftRight = true}, 80);
+					}
+				}
+				// arrow right
+				else if(pressed_keys[39]){
+					// if (moveFigure(1, 0)) pressed_keys[39] = false;
+					if(canMoveLeftRight){
+						moveFigure(1, 0);
+						canMoveLeftRight = false;
+						setTimeout(function(){canMoveLeftRight = true}, 80);
+					}
+				}		
+			}			
+
 			// arrow up		
 			if(pressed_keys[38]){
 				var nextPhase = (figure_current.phase + 1) % 4;
 				if (moveFigure(0, 0, nextPhase)) pressed_keys[38] = false;
 			}
+
 			// arrow down
 			if(pressed_keys[40]){
-				fall_delta = FALL_DELTA_MAX / 5;				
-				// if (moveFigure(0, 1)) pressed_keys[40] = false;
-				// else figureToGlass();
-				// fall_delta = FALL_DELTA_MAX;
+				fall_delta  /= 2;									
 			}
 			else{
 				fall_delta = FALL_DELTA_MAX;
 			}
+
 			// space — drop
 			if(pressed_keys[32]){	
 				dropFigure();		
 				figureToGlass();
 				pressed_keys[32] = false;		 
-			}											
+			}				
+			// automatic fall							
 			if(time_passed > fall_delta){
 				time_passed = 0;					
 				if (!(moveFigure(0, 1))) {
@@ -296,17 +314,41 @@ function Tetris(){
 		return collection;
 	}
 
-	function createFigure(){
+	function updateFigures(){
+		if(!figure_next){
+			figure_current = createFigure();
+			
+		}
+		else{
+			figure_current = figure_next;
+			figure_current.position.y = 0;
+		}
+
+		if(hasCollisions(figure_current.position.x, figure_current.position.y, figure_current.phase)){
+            setState(states.GAME_OVER);
+            return;
+		}
+		render.addCurrentFigure(figure_current);		
+
+		figure_next = createFigure();
+		figure_next.position.y = -100;
+		render.addNextFigure(figure_next);
+
+		render.update(figure_current, figure_next);
+	}
+
+	function createFigure(){		
+		var fig = {};
         var len = _figures.length;
         var random = Math.floor(Math.random() * len);
 
-        figure_current.position =
+        fig.position =
             {
                 x: GLASS_WIDTH / 2,
                 y: 0
             };
 
-        figure_current.phase = 0;
+        fig.phase = 0;
 
         var type = _figures[random];
 
@@ -324,22 +366,17 @@ function Tetris(){
             });
         });
 
-		figure_current.states = {};
+		fig.states = {};
 
 		// create matrices for 4 rotations
         for(var k = 0; k < 4; k++){
-        	figure_current.states[k] = {
+        	fig.states[k] = {
                 matrix : matrix,
                 center: [Math.floor(matrix[0].length / 2), Math.floor(matrix.length / 2)]
             };
 
         	matrix = rotateArray(matrix);
     	}
-    	render.addFigure(figure_current);
-
-		if(hasCollisions(figure_current.position.x, figure_current.position.y, figure_current.phase)){
-            setState(states.GAME_OVER);
-		}
 
         function rotateArray(array){
             var height = array.length;
@@ -356,9 +393,8 @@ function Tetris(){
 
             return newArray;
         }
-
-		render.update(figure_current);
-
+		
+		return fig;
 	}
 
 	function figureToGlass(){		
@@ -377,7 +413,8 @@ function Tetris(){
 		 			if(glass[currentY] !== undefined && glass[currentY][currentX] !== undefined){
 		 				array[i][j].row = currentY;
 		 				array[i][j].column = currentX;
-		 				render.addBlock(array[i][j]);
+		 				array[i][j].needsUpdate = true;
+		 				render.addBlockToGlass(array[i][j]);
 		 				glass[currentY][currentX] = array[i][j];		 				
 		 			}
 		 		}	
@@ -385,7 +422,8 @@ function Tetris(){
 		}	
 
 		checkFilledRows();
-		createFigure();
+		// createFigure();
+		updateFigures();
 		render.update();
 	}
 
@@ -526,12 +564,12 @@ function Tetris(){
 
 
 /*
-					██╗      ██████╗  █████╗ ██████╗ 
-					██║     ██╔═══██╗██╔══██╗██╔══██╗
-					██║     ██║   ██║███████║██║  ██║
-					██║     ██║   ██║██╔══██║██║  ██║
-					███████╗╚██████╔╝██║  ██║██████╔╝
-					╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚═════╝ 
+	██╗      ██████╗  █████╗ ██████╗ 
+	██║     ██╔═══██╗██╔══██╗██╔══██╗
+	██║     ██║   ██║███████║██║  ██║
+	██║     ██║   ██║██╔══██║██║  ██║
+	███████╗╚██████╔╝██║  ██║██████╔╝
+	╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚═════╝ 
                                                                        
 	*/
     var _figures = generateFigures();
