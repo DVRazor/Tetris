@@ -1,3 +1,8 @@
+// FPS METER
+var stats = new Stats();
+stats.showPanel(0);
+document.body.appendChild(stats.dom);
+
 (function($){
 	$(document).ready(function(){
 		var tetris = new Tetris();
@@ -39,6 +44,7 @@
 			var $score = $('#score');
 			$score.html(tetris.getScore());            
 		}
+		
 	});
 
 })(jQuery);
