@@ -16,8 +16,8 @@ function Tetris(){
 	const STEP_INTERVAL = 40;
 	const FALL_DELTA_MAX = 1000;		
 	
-	var figures = ['1,1,0;0,1,1', '1,1,1,1', '1,0,0;1,1,1', '0,0,1;1,1,1', '1,1;1,1', '0,1,1;1,1,0', '0,1,0;1,1,1', '0,1,0;1,1,1;0,1,0'];		
-
+	// var figures = ['1,1,0;0,1,1', '1,1,1,1', '1,0,0;1,1,1', '0,0,1;1,1,1', '1,1;1,1', '0,1,1;1,1,0', '0,1,0;1,1,1', '0,1,0;1,1,1;0,1,0'];		
+	var figures = ['1,1,1,1'];
 	var pressed_keys = {};		
 
 	var canMoveLeftRight = true;
@@ -274,8 +274,9 @@ function Tetris(){
 			// automatic fall							
 			if(time_passed > fall_delta){
 				time_passed = 0;					
-				if (!(moveFigure(0, 1))) {
-					figureToGlass();						
+				if (!(moveFigure(0, 1))) {					
+					figureToGlass();								
+					
 				}
 			}				
 			time_passed += STEP_INTERVAL;
@@ -316,8 +317,7 @@ function Tetris(){
 
 	function updateFigures(){
 		if(!figure_next){
-			figure_current = createFigure();
-			
+			figure_current = createFigure();			
 		}
 		else{
 			figure_current = figure_next;
@@ -332,8 +332,7 @@ function Tetris(){
 
 		figure_next = createFigure();
 		figure_next.position.y = -100;
-		render.addNextFigure(figure_next);
-
+		render.addNextFigure(figure_next);		
 		render.update(figure_current, figure_next);
 	}
 
@@ -397,7 +396,7 @@ function Tetris(){
 		return fig;
 	}
 
-	function figureToGlass(){		
+	function figureToGlass(){			
 		var position = figure_current.position;	
 		var curFigure = figure_current.states[figure_current.phase];
 		var array = curFigure.matrix;
@@ -413,7 +412,7 @@ function Tetris(){
 		 			if(glass[currentY] !== undefined && glass[currentY][currentX] !== undefined){
 		 				array[i][j].row = currentY;
 		 				array[i][j].column = currentX;
-		 				array[i][j].needsUpdate = true;
+		 				// array[i][j].needsUpdate = true;
 		 				render.addBlockToGlass(array[i][j]);
 		 				glass[currentY][currentX] = array[i][j];		 				
 		 			}
@@ -422,7 +421,6 @@ function Tetris(){
 		}	
 
 		checkFilledRows();
-		// createFigure();
 		updateFigures();
 		render.update();
 	}

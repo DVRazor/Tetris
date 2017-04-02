@@ -23,7 +23,7 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 
 	var background, glassContainer, figureContainerCurrent, figureContainerNext, text;   
 
-	var panelX, panelY, panelHeight, panelWidth 	
+	var panelX, panelY, panelHeight, panelWidth; 	
 
 	preload = scope.preload = new createjs.LoadQueue(false, 'assets/images/');
 
@@ -61,7 +61,7 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 		glassContainer.x = lineWidth;
 		var width = SQUARE_SIZE * GLASS_WIDTH;
 		var height = SQUARE_SIZE * GLASS_HEIGHT;
-		glassContainer.cache(0, 0, width, height);
+		// glassContainer.cache(0, 0, width, height);
  
 		figureContainerCurrent = new createjs.Container();
 
@@ -149,7 +149,7 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 		g.beginFill("black");
 		g.drawRect(panelX, panelY, panelWidth, panelHeight);
 
-		var nextText = new createjs.Text('NEXT', "25px Arial", 'yellow' )
+		var nextText = new createjs.Text('NEXT', "25px Arial", 'yellow' );
 		nextText.x = panelX + panelWidth / 2;
 		nextText.y = panelHeight - 6 * SQUARE_SIZE - lineWidth;
 		nextText.textAlign = 'center';
@@ -193,35 +193,52 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 	 ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝╚══════╝	
 	*/
  
-	scope.addBlockToGlass = function(block){
-		glassContainer.addChild(block);		
+	scope.addBlockToGlass = function(block){				
+		// block.x = block.parent.x + block.x - lineWidth;
+		// block.y = block.parent.y + block.y;		
+		block.needsUpdate = false;				
+		newY = SQUARE_SIZE * block.row;
+		var distanceY = Math.abs(block.y - newY);								
+		block.x = SQUARE_SIZE * block.column;
+		block.y = SQUARE_SIZE * block.row;
+
+		glassContainer.addChild(block);			
 	};
  
-	scope.removeBlockFromGlass = function(block){
+	scope.removeBlockFromGlass = function(block){		
+	//TO-DO instead move child to another container proportional to glassContainer
+	// do destroy animation, onComplete remove from there and put to AM (asynch)
 		glassContainer.removeChild(block);
 		AM.put(block);
 	};
  
 	scope.addCurrentFigure = function(figure){		
+		oldyY = 0;
+		if(tweenfigureContainerCurrentY) tweenfigureContainerCurrentY.kill();
 		figureContainerCurrent.y = figure.position.y * SQUARE_SIZE;
-		figureContainerCurrent.x = figure.position.x * SQUARE_SIZE;
+		figureContainerCurrent.x = figure.position.x * SQUARE_SIZE + lineWidth;
+
+		oldY = figureContainerCurrent.y;	
 
 		addBlocksToFigureContainer(figure, figureContainerCurrent);		
 		
 	};
 
 
-	scope.addNextFigure = function(figure){
-		var centerX = figure.states[figure.phase].matrix[0].length / 2 * SQUARE_SIZE
+	scope.addNextFigure = function(figure){		
+		var width = figure.states[figure.phase].matrix[0].length;
+		var height = figure.states[figure.phase].matrix.length;
+		var difX = (width / 2 - Math.floor(width / 2)) * SQUARE_SIZE;
+		var difY = (height / 2 - Math.floor(height / 2)) * SQUARE_SIZE;
 
-		figureContainerNext.x = panelX + panelWidth / 2 - centerX;		
-		figureContainerNext.y = panelHeight - SQUARE_SIZE * 4;		
+		figureContainerNext.x = panelX + panelWidth / 2 - difX;		
+		figureContainerNext.y = panelHeight - SQUARE_SIZE * 3 - difY;		
 		
 		addBlocksToFigureContainer(figure, figureContainerNext);
 		setBlocksInContainer(figure, figureContainerNext);		
 
 		background.updateCache();
-	}
+	};
 
 	function addBlocksToFigureContainer(figure, figureContainer){
 		var matrix = figure.states[figure.phase].matrix;
@@ -240,36 +257,36 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 			var child = glassContainer.getChildAt(i);
 			if(child.needsUpdate){
 				child.needsUpdate = false;				
-				child.x = SQUARE_SIZE * child.column;
-				child.y = SQUARE_SIZE * child.row;
+				newY = SQUARE_SIZE * child.row;
+				var distanceY = Math.abs(child.y - newY);				
+				// kill tweens of
+				TweenLite.killTweensOf(child);
+				TweenLite.to(child, 0.5, { y : newY, ease: Power0.easeNone} );
+				// child.x = SQUARE_SIZE * child.column;
+				// child.y = SQUARE_SIZE * child.row;
 			}
 		}
-		glassContainer.updateCache();
+		// glassContainer.updateCache();
 	}
  
 	function setCurrentFigure(figure){
-		if(!figure) return;
+		if(!figure) return;		
 
 		var centerX = figure.states[figure.phase].center[0];
 		var centerY = figure.states[figure.phase].center[1];
-		
-		figureContainerCurrent.x = lineWidth + (figure.position.x - centerX) * SQUARE_SIZE;		
+				
+		figureContainerCurrent.x = figure.position.x * SQUARE_SIZE + lineWidth;
 
-		var newY = (figure.position.y) * SQUARE_SIZE;
+		var newY = (figure.position.y) * SQUARE_SIZE;		
+		if(oldY === undefined) oldY = figureContainerCurrent.y;			
 		
-		// if the target Y has changed create new tween
+		// if the target Y has changed create new tween		
 		if(oldY !== newY){ 
 			// kill tween
 			if(tweenfigureContainerCurrentY) tweenfigureContainerCurrentY.kill();
-			var distanceY = Math.abs(figure.position.y * SQUARE_SIZE - figureContainerCurrent.y);
-
-			// speed up
-			if(distanceY > SQUARE_SIZE){
-				tweenfigureContainerCurrentY = TweenLite.to(figureContainerCurrent, 1 / distanceY * SQUARE_SIZE, { y : newY, ease: Power1.easeOut} );
-			}
-			else{ 
-				tweenfigureContainerCurrentY = TweenLite.to(figureContainerCurrent, 1 / distanceY * SQUARE_SIZE, { y : newY, ease:Power1.easeInOut} );						
-			}						
+			var distanceY = Math.abs(figure.position.y * SQUARE_SIZE - figureContainerCurrent.y);						
+			tweenfigureContainerCurrentY = TweenLite.fromTo(figureContainerCurrent, 1.1, { y: oldY }, { y: newY,  ease: Power1.easeInOut } );
+			//tweenfigureContainerCurrentY = TweenLite.to(figureContainerCurrent, 1 / distanceY * SQUARE_SIZE, { y : newY, ease:Power1.easeInOut});
 		}	
 		oldY = newY;
  		setBlocksInContainer(figure, figureContainerCurrent);
@@ -277,19 +294,15 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 	}	
 
 	function setBlocksInContainer(figure, figureContainer){
-		var index = 0; 
 		var matrix = figure.states[figure.phase].matrix;
 		var centerX = figure.states[figure.phase].center[0];
 		var centerY = figure.states[figure.phase].center[1];
- 
-		// child index 		
+ 		 		
 		for(var i = 0; i < matrix.length; i++){
 			for(var j = 0; j < matrix[i].length; j++){
-				if(matrix[i][j]){					
-					var child = figureContainer.getChildAt(index);
-					child.x = j * SQUARE_SIZE;					
-					child.y = (i - centerY) * SQUARE_SIZE;								
-					index++;
+				if(matrix[i][j]){													
+					matrix[i][j].x = (j - centerX) * SQUARE_SIZE;					
+					matrix[i][j].y = (i - centerY) * SQUARE_SIZE;
 				}
 			}
 		}
