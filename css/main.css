@@ -1,13 +1,13 @@
 #game-container{
-	display:flex;
+	/*display:flex;
 	flex-direction: column;
-	margin-top: 20px;
+*/	margin-top: 20px;
 }
 
 #gameCanvas{
 	padding: 0;
     margin: auto;
-    display: block;   
+    display: block;       
 }
 .playButtons{
 	display:block;
@@ -30,4 +30,9 @@
 
 #play, #new{
 	display: none;
+}
+
+body{
+	overflow:hidden;
+	position: relative;
 }
