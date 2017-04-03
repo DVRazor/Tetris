@@ -11,37 +11,30 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 	var FPS = 60;
 
 	var AM = scope.AM = new AssetManager();
-
-	var colors = ['blue', 'green', 'red', 'yellow'];
+	
+	var resources = new Preload(onComplete);
 
 	scope.getRandomColor = function(){
-	  var r = Math.floor(Math.random() * colors.length);
-	  return colors[r].toUpperCase();
-	};
+	  var r = Math.floor(Math.random() * resources.colors.length);
+	  return resources.colors[r].toUpperCase();
+	};	
 
-	var preload, manifest, canvas, stage;
+	var canvas, stage;
 
 	var background, glassContainer, figureContainerCurrent, figureContainerNext, text;   
 
 	var panelX, panelY, panelHeight, panelWidth; 	
 
-	preload = scope.preload = new createjs.LoadQueue(false, 'assets/images/');
+	var tweenfigureContainerCurrent;	
 
-	preload.on('complete', onComplete);
+	var oldFigureContainerY;
+	var newFigureContainerY;
 
-	manifest = [
-		{id: colors[0], src: 'block_blue.png'},
-		{id: colors[1], src:'block_green.png'},
-		{id: colors[2], src: 'block_red.png'},
-		{id: colors[3], src: 'block_yellow.png'}
-	];
-	
-	preload.loadManifest(manifest);
+	var timelineGeneral;
 
-	var tweenfigureContainerCurrentY;	
+	// var scaleX = 0.5;
+	// var scaleY = 0.5;
 
-	var oldY;
-	var newY;
 /*
 	 ██████╗ ██████╗ ███╗   ███╗██████╗ ██╗     ███████╗████████╗███████╗
 	██╔════╝██╔═══██╗████╗ ████║██╔══██╗██║     ██╔════╝╚══██╔══╝██╔════╝
@@ -53,7 +46,12 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 */
 	function onComplete(){
 		canvas = document.getElementById('gameCanvas');
+		// canvas.width *= scaleX;
+		// canvas.height *= scaleY;
+		// debugger;
 		stage = new createjs.Stage(canvas);
+		// stage.scaleX = scaleX;
+		// stage.scaleY = scaleY;
  
 		populateAM();
  
@@ -81,14 +79,14 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
    		stats.begin();   		
    		stage.update();
    		stats.end();
-
    }
 
 	function populateAM(){
-		for(var i = 0; i < colors.length; i++){
-			AM.addItem(colors[i], (function(index){
+		for(var i = 0; i < resources.colors.length; i++){
+			AM.addItem(resources.colors[i], (function(index){
 				return function(){
-					return new createjs.Bitmap(preload.getResult(colors[index]))
+					var object = new createjs.Bitmap(resources.preload.getResult(resources.colors[index]));					
+					return object;
 				}				
 			})(i), 20);
 		}
@@ -160,6 +158,15 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 
 		return background;
 	}
+
+	/*
+	██████╗ ██╗   ██╗██████╗ ██╗     ██╗ ██████╗
+	██╔══██╗██║   ██║██╔══██╗██║     ██║██╔════╝
+	██████╔╝██║   ██║██████╔╝██║     ██║██║     
+	██╔═══╝ ██║   ██║██╔══██╗██║     ██║██║     
+	██║     ╚██████╔╝██████╔╝███████╗██║╚██████╗
+	╚═╝      ╚═════╝ ╚═════╝ ╚══════╝╚═╝ ╚═════╝                                            
+	*/
  
 	scope.update = function(figure_current, figure_next){		
 		setBlocks();
@@ -184,6 +191,14 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 		stage.update();
 	};
 
+	scope.pause = function(toPause){
+		if(toPause){
+			timelineGeneral = TimelineLite.exportRoot();				
+			timelineGeneral.pause();
+		}
+		else if(timelineGeneral != undefined) timelineGeneral.resume();
+	}
+
 	/*
 	 ██████╗ ██████╗ ███╗   ██╗████████╗ █████╗ ██╗███╗   ██╗███████╗██████╗ ███████╗
 	██╔════╝██╔═══██╗████╗  ██║╚══██╔══╝██╔══██╗██║████╗  ██║██╔════╝██╔══██╗██╔════╝
@@ -193,39 +208,37 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 	 ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝╚══════╝	
 	*/
  
-	scope.addBlockToGlass = function(block){				
+	scope.addBlockToGlass = function(block){
 		// block.x = block.parent.x + block.x - lineWidth;
-		// block.y = block.parent.y + block.y;		
-		block.needsUpdate = false;				
-		newY = SQUARE_SIZE * block.row;
-		var distanceY = Math.abs(block.y - newY);								
-		block.x = SQUARE_SIZE * block.column;
-		block.y = SQUARE_SIZE * block.row;
-
-		glassContainer.addChild(block);			
+ 		// block.y = block.parent.y + block.y;		
+ 		block.needsUpdate = false;				
+ 		var newY = SQUARE_SIZE * block.row;
+ 		var distanceY = Math.abs(block.y - newY);								
+ 		block.x = SQUARE_SIZE * block.column;
+ 		block.y = SQUARE_SIZE * block.row;
+ 	
+ 		glassContainer.addChild(block);		
 	};
  
-	scope.removeBlockFromGlass = function(block){		
-	//TO-DO instead move child to another container proportional to glassContainer
-	// do destroy animation, onComplete remove from there and put to AM (asynch)
-		glassContainer.removeChild(block);
-		AM.put(block);
+	scope.removeBlockFromGlass = function(block){
+		//TO-DO instead move child to another container proportional to glassContainer
+ 		// do destroy animation, onComplete remove from there and put to AM (asynch)
+  		glassContainer.removeChild(block);
+  		AM.put(block);
 	};
  
-	scope.addCurrentFigure = function(figure){		
-		oldyY = 0;
-		if(tweenfigureContainerCurrentY) tweenfigureContainerCurrentY.kill();
+	scope.addCurrentFigure = function(figure){			
+		if(tweenfigureContainerCurrent) tweenfigureContainerCurrent.kill();	
 		figureContainerCurrent.y = figure.position.y * SQUARE_SIZE;
 		figureContainerCurrent.x = figure.position.x * SQUARE_SIZE + lineWidth;
 
-		oldY = figureContainerCurrent.y;	
+		oldFigureContainerY = figureContainerCurrent.y;
 
-		addBlocksToFigureContainer(figure, figureContainerCurrent);		
-		
+		addBlocksToFigureContainer(figure, figureContainerCurrent);				
 	};
 
 
-	scope.addNextFigure = function(figure){		
+	scope.addNextFigure = function(figure){
 		var width = figure.states[figure.phase].matrix[0].length;
 		var height = figure.states[figure.phase].matrix.length;
 		var difX = (width / 2 - Math.floor(width / 2)) * SQUARE_SIZE;
@@ -256,12 +269,11 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 		for(var i = 0; i < glassContainer.numChildren; i++){
 			var child = glassContainer.getChildAt(i);
 			if(child.needsUpdate){
-				child.needsUpdate = false;				
-				newY = SQUARE_SIZE * child.row;
-				var distanceY = Math.abs(child.y - newY);				
+				child.needsUpdate = false;	
+				var newY = SQUARE_SIZE * child.row;
 				// kill tweens of
 				TweenLite.killTweensOf(child);
-				TweenLite.to(child, 0.5, { y : newY, ease: Power0.easeNone} );
+				TweenLite.to(child, 0.5, { y : newY, ease: Power0.easeNone} );			
 				// child.x = SQUARE_SIZE * child.column;
 				// child.y = SQUARE_SIZE * child.row;
 			}
@@ -270,30 +282,30 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 	}
  
 	function setCurrentFigure(figure){
-		if(!figure) return;		
+		if(!figure) return;
 
 		var centerX = figure.states[figure.phase].center[0];
 		var centerY = figure.states[figure.phase].center[1];
-				
-		figureContainerCurrent.x = figure.position.x * SQUARE_SIZE + lineWidth;
-
-		var newY = (figure.position.y) * SQUARE_SIZE;		
-		if(oldY === undefined) oldY = figureContainerCurrent.y;			
 		
-		// if the target Y has changed create new tween		
-		if(oldY !== newY){ 
+		figureContainerCurrent.x = figure.position.x * SQUARE_SIZE + lineWidth;	
+
+		var newFigureContainerY = (figure.position.y) * SQUARE_SIZE;
+
+		if(oldFigureContainerY === undefined) oldY = figureContainerCurrent.y;
+		
+		// if the target Y has changed create new tween
+		if(oldFigureContainerY !== newFigureContainerY){ 
 			// kill tween
-			if(tweenfigureContainerCurrentY) tweenfigureContainerCurrentY.kill();
+			if(tweenfigureContainerCurrent) tweenfigureContainerCurrent.kill();
 			var distanceY = Math.abs(figure.position.y * SQUARE_SIZE - figureContainerCurrent.y);						
-			tweenfigureContainerCurrentY = TweenLite.fromTo(figureContainerCurrent, 1.1, { y: oldY }, { y: newY,  ease: Power1.easeInOut } );
-			//tweenfigureContainerCurrentY = TweenLite.to(figureContainerCurrent, 1 / distanceY * SQUARE_SIZE, { y : newY, ease:Power1.easeInOut});
+ 			tweenfigureContainerCurrent = TweenLite.fromTo(figureContainerCurrent, 1.1, { y: oldFigureContainerY }, { y: newFigureContainerY,  ease: Power1.easeInOut } );	
 		}	
-		oldY = newY;
+		oldFigureContainerY = newFigureContainerY;
  		setBlocksInContainer(figure, figureContainerCurrent);
 		
 	}	
 
-	function setBlocksInContainer(figure, figureContainer){
+	function setBlocksInContainer(figure, figureContainer){		
 		var matrix = figure.states[figure.phase].matrix;
 		var centerX = figure.states[figure.phase].center[0];
 		var centerY = figure.states[figure.phase].center[1];
