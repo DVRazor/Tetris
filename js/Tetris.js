@@ -17,7 +17,7 @@ function Tetris(){
 	const FALL_DELTA_MAX = 1000;		
 	
 	var figures = ['1,1,0;0,1,1', '1,1,1,1', '1,0,0;1,1,1', '0,0,1;1,1,1', '1,1;1,1', '0,1,1;1,1,0', '0,1,0;1,1,1', '0,1,0;1,1,1;0,1,0'];		
-	var figures = ['1,1,1,1'];
+	
 	var pressed_keys = {};		
 
 	var canMoveLeftRight = true;
