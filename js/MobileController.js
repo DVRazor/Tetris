@@ -2,6 +2,7 @@ function MobileController(){
 	$('#gameCanvas').on('touchstart', handleTouchStart);        
 	$('#gameCanvas').on('touchmove', handleTouchMove);
 	$('#gameCanvas').on('touchend', handleTouchEnd);
+	
 	var xDown = null;                                                        
 	var yDown = null;   
 
@@ -10,10 +11,11 @@ function MobileController(){
 	function handleTouchStart(evt){
 	    xDown = evt.touches[0].clientX;                                      
 	    yDown = evt.touches[0].clientY;   	                                
-	}        
+	};        
 
 	function handleTouchMove(evt) {
-		evt.preventDefault()
+		evt.preventDefault();
+
 		if(!xDown || !yDown){
 	        return;
 		}
@@ -54,7 +56,7 @@ function MobileController(){
 	    /* reset values */
 	    xDown = null;
 	    yDown = null;                                             
-	}
+	};
 
 	function handleTouchEnd(evt){
 		$.event.trigger({type: 'keyup', keyCode: lastKey});

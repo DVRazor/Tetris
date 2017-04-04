@@ -17,7 +17,7 @@ function Tetris(){
 	const FALL_DELTA_MAX = 1000;		
 	
 	var figures = ['1,1,0;0,1,1', '1,1,1,1', '1,0,0;1,1,1', '0,0,1;1,1,1', '1,1;1,1', '0,1,1;1,1,0', '0,1,0;1,1,1', '0,1,0;1,1,1;0,1,0'];		
-	// var figures = ['1,1,1,1'];
+	var figures = ['1,1,1,1'];
 	var pressed_keys = {};		
 
 	var canMoveLeftRight = true;
@@ -110,8 +110,7 @@ function Tetris(){
 
 */
 	function onKeyDown(e){	
-		e.preventDefault();			
-		console.log('down', e.keyCode);
+		e.preventDefault();					
 		pressed_keys[e.keyCode] = true;
 	}
 	function onKeyUp(e){
@@ -173,6 +172,7 @@ function Tetris(){
 		clearInterval(gameTimer);	
 		createjs.Sound.stop();
 		createjs.Sound.play('gameover');
+		render.animateGameOver();
 		$scope.trigger(scope.GAME_OVER);					
 	}
 
@@ -427,7 +427,7 @@ function Tetris(){
 		 			if(glass[currentY] !== undefined && glass[currentY][currentX] !== undefined){
 		 				array[i][j].row = currentY;
 		 				array[i][j].column = currentX;		 				
-		 				render.addBlockToGlass(array[i][j]);
+		 				render.addBlockToGlass(array[i][j], glass);
 		 				glass[currentY][currentX] = array[i][j];		 				
 		 			}
 		 		}	
