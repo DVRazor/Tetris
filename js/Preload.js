@@ -2,7 +2,7 @@ var Preload = function(callback){
 
 	var scope = this;
 
-	var preload, manifest, sounds;
+	var preload, images, sounds;
 
 	var colors = scope.colors = ['blue', 'green', 'red', 'yellow'];
 
@@ -14,7 +14,7 @@ var Preload = function(callback){
 
 	preload.on('complete', callback);
 
-	manifest = [
+	images = [
 		{id: colors[0], src: 'images/block_blue.png'},
 		{id: colors[1], src:'images/block_green.png'},
 		{id: colors[2], src: 'images/block_red.png'},	
@@ -30,7 +30,6 @@ var Preload = function(callback){
 		{id: sounds[5], src: 'audio/gameover.mp3', data: 1}
 	]
 
-	preload.loadManifest(manifest);	
-	preload.loadManifest(sounds)
-	
+	preload.loadManifest(images);	
+	preload.loadManifest(sounds)	
 }

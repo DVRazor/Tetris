@@ -24,12 +24,12 @@ function Tetris(){
 
 	var glass = [];
 
-    for(var i = 0; i < GLASS_HEIGHT; i++){
-        glass[i] = [];
-        for(var j = 0; j < GLASS_WIDTH; j++){
-            glass[i].push(null);
-        }
-    }
+	for(var i = 0; i < GLASS_HEIGHT; i++){
+		glass[i] = [];
+		for(var j = 0; j < GLASS_WIDTH; j++){
+			glass[i].push(null);
+		}
+	}
 
 	var is_paused = false;	
 
@@ -94,10 +94,10 @@ function Tetris(){
 	function initStage(){
 		render = new Render(GLASS_WIDTH, GLASS_HEIGHT, GLASS_WALL);
 		$(render).on(render.LOADED, function(){			
-            setState(states.START_SCREEN);
+			setState(states.START_SCREEN);
 		});
 
-        AM = render.AM;
+		AM = render.AM;
 	}		
 
 /*
@@ -134,13 +134,13 @@ function Tetris(){
 	██║   ██║██╔══██║██║╚██╔╝██║██╔══╝      ██╔══╝  ╚██╗ ██╔╝██╔══╝  ██║╚██╗██║   ██║   ╚════██║
 	╚██████╔╝██║  ██║██║ ╚═╝ ██║███████╗    ███████╗ ╚████╔╝ ███████╗██║ ╚████║   ██║   ███████║
 	 ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝    ╚══════╝  ╚═══╝  ╚══════╝╚═╝  ╚═══╝   ╚═╝   ╚══════╝
-                                                
+												
 */
 
-	var _startGame = function(){											
-		updateFigures();							
-		setKeyEventListeners();					
-		clearInterval(gameTimer);	
+	var _startGame = function(){
+		updateFigures();
+		setKeyEventListeners();
+		clearInterval(gameTimer);
 
 		createjs.Sound.stop();
 		backgroundMusic = createjs.Sound.play('background', {loop: -1, volume: 0.5, interrupt: createjs.Sound.INTERRUPT_ANY});					
@@ -148,17 +148,17 @@ function Tetris(){
 		gameStep();
 	};
 
-	var _setPaused = function(toPause){										
+	var _setPaused = function(toPause){
 		// if "set play"
 		if(toPause === false){
 			setKeyEventListeners();
-			render.pause(false);		
-			is_paused = false;									
+			render.pause(false);
+			is_paused = false;
 			gameStep();
 			backgroundMusic.paused = false;
 		}
 		// if "set pause"
-		else if(toPause === true){						
+		else if(toPause === true){
 			clearInterval(gameTimer);
 			removeKeyEventListeners();	
 			render.pause(true);				
@@ -167,30 +167,30 @@ function Tetris(){
 		}
 	};
 
-	function gameOver(){		
-		removeKeyEventListeners();			
-		clearInterval(gameTimer);	
+	function gameOver(){
+		removeKeyEventListeners();
+		clearInterval(gameTimer);
 		createjs.Sound.stop();
-		createjs.Sound.play('gameover');
+		createjs.Sound.play('gameover')
 		render.animateGameOver();
-		$scope.trigger(scope.GAME_OVER);					
+		$scope.trigger(scope.GAME_OVER);
 	}
 
 	function resetGame(){
-	    render.reset();
-        is_paused = false;
-        updateScore(0);
-        fall_delta = FALL_DELTA_MAX;
-        pressed_keys = {};
+		render.reset();
+		is_paused = false;
+		updateScore(0);
+		fall_delta = FALL_DELTA_MAX;
+		pressed_keys = {};
 
-        // nullify glass
-        for(var i = 0; i < GLASS_HEIGHT; i++){
-            for(var j = 0; j < GLASS_WIDTH; j++){
-                glass[i][j] = null;
-            }
-        }      
-        
-    }
+		// nullify glass
+		for(var i = 0; i < GLASS_HEIGHT; i++){
+			for(var j = 0; j < GLASS_WIDTH; j++){
+				glass[i][j] = null;
+			}
+		}      
+		
+	}
 
 	function checkFilledRows(){
 		for(var i = glass.length - 1; i >= 0; i--){
@@ -198,26 +198,26 @@ function Tetris(){
 			if(glass[i].every(function(v){return v == null})) return;
 
 			// if row is complete
-            if (glass[i].every(function(v){return v != null})){
-                // remove blocks from glass in Render and put to AM
-                for(var k = 0; k < glass[i].length; k++){
-                    render.removeBlockFromGlass(glass[i][k]);
-                }
-                // for each row, replace it with the above row
+			if (glass[i].every(function(v){return v != null})){
+				// remove blocks from glass in Render and put to AM
+				for(var k = 0; k < glass[i].length; k++){
+					render.removeBlockFromGlass(glass[i][k]);
+				}
+				// for each row, replace it with the above row
 				for(var j = i - 1; j >= 0; j--){
-				 	glass[j+1] = glass[j].slice(); // replaced
+					glass[j+1] = glass[j].slice(); // replaced
 
-				 	// set new row-coordinate
-                    for(var l = 0; l < glass[i].length; l++){                        
-                        if(glass[j+1][l]){
-                            glass[j+1][l].row = j+1;
-                            glass[j+1][l].needsUpdate = true;
-                        }
-                    }
+				// set new row-coordinate
+				for(var l = 0; l < glass[i].length; l++){
+					if(glass[j+1][l]){
+						glass[j+1][l].row = j+1;
+						glass[j+1][l].needsUpdate = true;
+					}
+				}
 
-                    // if row is empty 
-                    if(glass[j].every(function(v){return v == null})) break;
-				}					     
+					// if row is empty 
+					if(glass[j].every(function(v){return v == null})) break;
+				}
 				updateScore();
 				createjs.Sound.play('destroy', {interrupt: createjs.Sound.INTERRUPT_ANY});
 
@@ -230,7 +230,7 @@ function Tetris(){
 	function updateScore(newScore){		
 		if(newScore !== undefined)	score = newScore;
 		else score += GLASS_WIDTH;
-		$scope.trigger(scope.SCORE_CHANGED);			
+		$scope.trigger(scope.SCORE_CHANGED);
 	}
 
 	/*
@@ -243,7 +243,7 @@ function Tetris(){
 
 	*/	
 	function gameStep(){			
-		gameTimer = setInterval(function(){				
+		gameTimer = setInterval(function(){
 			// if left and right not pressed together
 			if(!(pressed_keys[37] && pressed_keys[39])){
 				// arrow left
@@ -283,15 +283,15 @@ function Tetris(){
 			if(pressed_keys[32]){	
 				dropFigure();		
 				figureToGlass();
-				pressed_keys[32] = false;		 
+				pressed_keys[32] = false;
 			}				
 			// automatic fall							
 			if(time_passed > fall_delta){
-				time_passed = 0;					
+				time_passed = 0;
 				if (!(moveFigure(0, 1))) {
-					figureToGlass();						
+					figureToGlass();
 				}
-			}				
+			}
 			time_passed += STEP_INTERVAL;
 
 		}, STEP_INTERVAL);
@@ -339,12 +339,12 @@ function Tetris(){
 		}
 
 		if(hasCollisions(figure_current.position.x, figure_current.position.y, figure_current.phase)){
-            setState(states.GAME_OVER);
-            return;
+			setState(states.GAME_OVER);
+			return;
 		}
 		render.addCurrentFigure(figure_current);		
 
-		figure_next = createFigure();+
+		figure_next = createFigure();
 		
 		render.addNextFigure(figure_next);
 
@@ -353,60 +353,60 @@ function Tetris(){
 
 	function createFigure(){		
 		var fig = {};
-        var len = _figures.length;
-        var random = Math.floor(Math.random() * len);
+		var len = _figures.length;
+		var random = Math.floor(Math.random() * len);
 
-        fig.position =
-            {
-                x: GLASS_WIDTH / 2,
-                y: 0
-            };
+		fig.position =
+			{
+				x: GLASS_WIDTH / 2,
+				y: 0
+			};
 
-        fig.phase = 0;
+		fig.phase = 0;
 
-        var type = _figures[random];
+		var type = _figures[random];
 
-        var color = render.getRandomColor();
+		var color = render.getRandomColor();
 
 		// create a matrix of visual objects
-        var matrix = type.slice();
-        matrix = matrix.map(function(arr) {
-            return arr.map(function(v) {
-                if (v == 1) {
-                    var obj = AM.pull(AM.types[color]);                   
-                    return obj;
-                }
-                else return null;
-            });
-        });
+		var matrix = type.slice();
+		matrix = matrix.map(function(arr) {
+			return arr.map(function(v) {
+				if (v == 1) {
+					var obj = AM.pull(AM.types[color]);
+					return obj;
+				}
+				else return null;
+			});
+		});
 
 		fig.states = {};
 
 		// create matrices for 4 rotations
-        for(var k = 0; k < 4; k++){
-        	fig.states[k] = {
-                matrix : matrix,
-                center: [Math.floor(matrix[0].length / 2), Math.floor(matrix.length / 2)]
-            };
+		for(var k = 0; k < 4; k++){
+			fig.states[k] = {
+				matrix : matrix,
+				center: [Math.floor(matrix[0].length / 2), Math.floor(matrix.length / 2)]
+			};
 
-        	matrix = rotateArray(matrix);
-    	}
+			matrix = rotateArray(matrix);
+		}
 
-        function rotateArray(array){
-            var height = array.length;
-            var width = array[0].length;
-            var newArray = [];
+		function rotateArray(array){
+			var height = array.length;
+			var width = array[0].length;
+			var newArray = [];
 
-            for(var i = 0; i < width; i++){
-                var newRow = [];
-                for(var j = height - 1; j >= 0; j--){
-                    newRow.push(array[j][i]);
-                }
-                newArray.push(newRow);
-            }
+			for(var i = 0; i < width; i++){
+				var newRow = [];
+				for(var j = height - 1; j >= 0; j--){
+					newRow.push(array[j][i]);
+				}
+				newArray.push(newRow);
+			}
 
-            return newArray;
-        }
+			return newArray;
+		}
 		
 		return fig;
 	}
@@ -419,24 +419,24 @@ function Tetris(){
 		// move objects from figure to glass
 		for(var i = 0; i < array.length; i++){
 			for(var j = 0; j < array[i].length; j++){
-			 	if(array[i][j]) {
-			 		var centerX = curFigure.center[0];
+				if(array[i][j]) {
+					var centerX = curFigure.center[0];
 					var centerY = curFigure.center[1];		
-			 		var currentX = position.x - centerX + j;
-			 		var currentY = position.y - centerY + i;			 		
-		 			if(glass[currentY] !== undefined && glass[currentY][currentX] !== undefined){
-		 				array[i][j].row = currentY;
-		 				array[i][j].column = currentX;		 				
-		 				render.addBlockToGlass(array[i][j], glass);
-		 				glass[currentY][currentX] = array[i][j];		 				
-		 			}
-		 		}	
+					var currentX = position.x - centerX + j;
+					var currentY = position.y - centerY + i;			 		
+					if(glass[currentY] !== undefined && glass[currentY][currentX] !== undefined){
+						array[i][j].row = currentY;
+						array[i][j].column = currentX;			
+						render.addBlockToGlass(array[i][j], glass);
+						glass[currentY][currentX] = array[i][j];
+					}
+				}	
 			}
 		}	
 
 		createjs.Sound.play('hit', { volume: 0.8, interrupt: createjs.Sound.INTERRUPT_NONE });
 
-		checkFilledRows();				
+		checkFilledRows();
 		updateFigures();
 
 		render.update();
@@ -479,26 +479,26 @@ function Tetris(){
 	}
 
 	function hasCollisions(newPositionX, newPositionY, newPhase){
-        var curFigure = figure_current.states[newPhase];
-        var array = curFigure.matrix;
+		var curFigure = figure_current.states[newPhase];
+		var array = curFigure.matrix;
 
-        for(var i = 0; i < array.length; i++){
-            for(var j = 0; j < array[i].length; j++){
-                if(array[i][j]){
-                    var centerX = curFigure.center[0];
-                    var centerY = curFigure.center[1];
-                    var newX = newPositionX - centerX + j;
-                    var newY = newPositionY - centerY + i;
-                    // check for walls
-                    if(newX < 0 || newX >= GLASS_WIDTH || newY >= GLASS_HEIGHT) return true;
-                    // check for content in glass
-                    if(glass[newY] !== undefined && glass[newY][newX] !== undefined && glass[newY][newX]) return true;
-                }
-            }
-        }
+		for(var i = 0; i < array.length; i++){
+			for(var j = 0; j < array[i].length; j++){
+				if(array[i][j]){
+					var centerX = curFigure.center[0];
+					var centerY = curFigure.center[1];
+					var newX = newPositionX - centerX + j;
+					var newY = newPositionY - centerY + i;
+					// check for walls
+					if(newX < 0 || newX >= GLASS_WIDTH || newY >= GLASS_HEIGHT) return true;
+					// check for content in glass
+					if(glass[newY] !== undefined && glass[newY][newX] !== undefined && glass[newY][newX]) return true;
+				}
+			}
+		}
 
-        return false;
-    }
+		return false;
+	}
 	/*
 
 	███████╗████████╗ █████╗ ████████╗███████╗    ███╗   ███╗ █████╗  ██████╗██╗  ██╗██╗███╗   ██╗███████╗
@@ -590,10 +590,10 @@ function Tetris(){
 	██║     ██║   ██║██╔══██║██║  ██║
 	███████╗╚██████╔╝██║  ██║██████╔╝
 	╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚═════╝ 
-                                                                       
+																	   
 	*/
-    var _figures = generateFigures();
-    initStage();
+	var _figures = generateFigures();
+	initStage();
 }	
 
 

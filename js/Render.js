@@ -370,17 +370,17 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 	 			 scaleY: 0,
 	 			 scaleX: 0,
 	 			 onComplete: function(clone){ return function(){removeParticle(clone)} }(clone)
-	 			});	 	
+	 			}
+	 		);	 	
  		}
 	}
 
 	function removeParticle(block){		
 		
 		TweenLite.killTweensOf(block);		
-		// back to normal size
+		// back to default
 		block.scaleX = 1;
-		block.scaleY = 1;
-		// show
+		block.scaleY = 1;		
 		block.alpha = 1;
 
 		particleContainer.removeChild(block);
