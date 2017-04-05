@@ -15,8 +15,8 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 	var resources = new Preload(onComplete);
 
 	scope.getRandomColor = function(){
-	  var r = Math.floor(Math.random() * resources.colors.length);
-	  return resources.colors[r].toUpperCase();
+		var r = Math.floor(Math.random() * resources.colors.length);
+		return resources.colors[r].toUpperCase();
 	};	
 
 	var canvas, stage;
@@ -27,10 +27,7 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 
 	var panelX, panelY, panelHeight, panelWidth; 	
 
-	var tweenfigureContainerCurrent;	
-
-	var oldFigureContainerY;
-	var newFigureContainerY;
+	var oldFigureContainerY, newFigureContainerY;
 
 	var timelineGeneral;
 
@@ -57,16 +54,16 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 		particleContainer.x = lineWidth;
 		 
 		figureContainerCurrent = new createjs.Container();
-
 		figureContainerNext = new createjs.Container();
 		
-		background = createBackground();
+		background = createBackground();		
 		background.cache(0, 0, canvas.width, canvas.height);		
  
-		stage.addChild(background, glassContainer, figureContainerCurrent, particleContainer);	 
-		
+		stage.addChild(background, glassContainer, figureContainerCurrent, particleContainer);	
+
 		createjs.Ticker.on('tick', tick);
 		createjs.Ticker.setFPS(FPS);
+
 		$scope.trigger(scope.LOADED);
    }
 
@@ -163,7 +160,7 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 	╚═╝      ╚═════╝ ╚═════╝ ╚══════╝╚═╝ ╚═════╝                                            
 	*/
  
-	scope.update = function(figure_current, figure_next){		
+	scope.update = function(figure_current){		
 		setBlocks();
 		setCurrentFigure(figure_current);				
 		stage.update();
@@ -241,8 +238,8 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
   		}	  		
 	};
  
-	scope.addCurrentFigure = function(figure){			
-		if(tweenfigureContainerCurrent) tweenfigureContainerCurrent.kill();	
+	scope.addCurrentFigure = function(figure){					
+		TweenLite.killTweensOf(figureContainerCurrent);
 		figureContainerCurrent.y = figure.position.y * SQUARE_SIZE;
 		figureContainerCurrent.x = figure.position.x * SQUARE_SIZE + lineWidth;
 
@@ -308,11 +305,11 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 		if(oldFigureContainerY === undefined) oldY = figureContainerCurrent.y;
 		
 		// if the target Y has changed create new tween
-		if(oldFigureContainerY !== newFigureContainerY){ 
-			// kill tween
-			if(tweenfigureContainerCurrent) tweenfigureContainerCurrent.kill();
-			var distanceY = Math.abs(figure.position.y * SQUARE_SIZE - figureContainerCurrent.y);						
- 			tweenfigureContainerCurrent = TweenLite.fromTo(figureContainerCurrent, 1.1, { y: oldFigureContainerY }, { y: newFigureContainerY,  ease: Power1.easeInOut } );	
+		if(oldFigureContainerY !== newFigureContainerY){ 	
+			var distanceY = Math.abs(figure.position.y * SQUARE_SIZE - figureContainerCurrent.y);	
+
+			TweenLite.killTweensOf(figureContainerCurrent);
+ 			TweenLite.fromTo(figureContainerCurrent, 1.1, { y: oldFigureContainerY }, { y: newFigureContainerY,  ease: Power1.easeInOut } );	
 		}	
 		oldFigureContainerY = newFigureContainerY;
  		setBlocksInContainer(figure, figureContainerCurrent);
@@ -345,8 +342,7 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 	*/
 
 	function createParticles(block){
-		for(var i = 0; i < 3; i++){
-			
+		for(var i = 0; i < 3; i++){			
 	 		var clone = AM.pull(block.AM_index);
 	 		clone.x = block.x;
 	 		clone.y = block.y + SQUARE_SIZE;
@@ -371,7 +367,7 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 	 			 scaleX: 0,
 	 			 onComplete: function(clone){ return function(){removeParticle(clone)} }(clone)
 	 			}
-	 		);	 	
+	 		);
  		}
 	}
 
