@@ -170,14 +170,18 @@ function Tetris(){
 	function gameOver(){
 		removeKeyEventListeners();
 		clearInterval(gameTimer);
+
 		createjs.Sound.stop();
 		createjs.Sound.play('gameover')
+
 		render.animateGameOver();
+
 		$scope.trigger(scope.GAME_OVER);
 	}
 
 	function resetGame(){
 		render.reset();
+
 		is_paused = false;
 		updateScore(0);
 		fall_delta = FALL_DELTA_MAX;
@@ -230,6 +234,7 @@ function Tetris(){
 	function updateScore(newScore){		
 		if(newScore !== undefined)	score = newScore;
 		else score += GLASS_WIDTH;
+
 		$scope.trigger(scope.SCORE_CHANGED);
 	}
 
@@ -330,8 +335,7 @@ function Tetris(){
 
 	function updateFigures(){
 		if(!figure_next){
-			figure_current = createFigure();
-			
+			figure_current = createFigure();			
 		}
 		else{
 			figure_current = figure_next;
@@ -348,7 +352,7 @@ function Tetris(){
 		
 		render.addNextFigure(figure_next);
 
-		render.update(figure_current, figure_next);
+		render.update(figure_current);
 	}
 
 	function createFigure(){		
