@@ -9,7 +9,7 @@ var AssetManager = function() {
 
     };
 
-    scope.addItem = function(name, genFunc, count){
+    scope.addItem = function(name, genFunc, count, resetFunc){        
         name = name.toUpperCase();
         count = +count || 1;
         var index = scope.types[name];
@@ -25,18 +25,19 @@ var AssetManager = function() {
             {   
                 name: name,
                 func : genFunc,
-                array: []
+                array: [],
+                resetFunc : resetFunc
             };
-        }
+        }        
 
         for(var i = 0; i < count; i++){
             var obj = genFunc();
-            obj.AM_index = index;
+            obj.AM_index = index;            
             scope.put(obj);
         }
     };
 
-    scope.pull = function(index){        
+    scope.pull = function(index){      
         if(index >= Object.keys(scope.types).length) return;
 
         if(collection[index].array.length < 1){            
@@ -48,6 +49,9 @@ var AssetManager = function() {
     };
 
     scope.put = function(object){
+        if(collection[object.AM_index].resetFunc){
+         collection[object.AM_index].resetFunc.call(object);         
+        }
         collection[object.AM_index].array.push(object);
     };
 };    
