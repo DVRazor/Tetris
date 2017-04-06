@@ -1,5 +1,6 @@
 // FPS METER
 var stats = new Stats();
+
 stats.showPanel(0);
 document.body.appendChild(stats.dom);
 
@@ -10,14 +11,16 @@ document.body.appendChild(stats.dom);
 			.on(tetris.SCORE_CHANGED, onScoreChanged)
 			.on(tetris.GAME_OVER, onGameover);
 
+		var mobileController = new MobileController();
+
 		var $startBtn = $('#start');
 		var $pauseBtn = $('#pause');
 		var $playBtn = $('#play');
-		var $newBtn = $('#new');
+		var $soundBtn = $('#sound');
 
 		$startBtn.on('click', function(){
 			$pauseBtn.show();
-			$playBtn.hide();
+			$playBtn.hide();						
 			tetris.startGame();						
 		});
 
@@ -44,7 +47,14 @@ document.body.appendChild(stats.dom);
 			var $score = $('#score');
 			$score.html(tetris.getScore());            
 		}
-		
+
+		$soundBtn.on('click', function(){
+			createjs.Sound.muted = !createjs.Sound.muted;
+		});
+
+		$('.playButton').on('click', function(){			
+			createjs.Sound.play('select');
+		});		
 	});
 
 })(jQuery);

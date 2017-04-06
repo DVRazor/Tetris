@@ -11,37 +11,27 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 	var FPS = 60;
 
 	var AM = scope.AM = new AssetManager();
-
-	var colors = ['blue', 'green', 'red', 'yellow'];
+	
+	var resources = new Preload(onComplete);
 
 	scope.getRandomColor = function(){
-	  var r = Math.floor(Math.random() * colors.length);
-	  return colors[r].toUpperCase();
-	};
+		var r = Math.floor(Math.random() * resources.colors.length);
+		return resources.colors[r].toUpperCase();
+	};	
 
-	var preload, manifest, canvas, stage;
+	var canvas, stage;
 
-	var background, glassContainer, figureContainerCurrent, figureContainerNext, text;   
+	var background, glassContainer, figureContainerCurrent, figureContainerNext; 
 
-	var panelX, panelY, panelHeight, panelWidth 	
+	var text, particleContainer;  
 
-	preload = scope.preload = new createjs.LoadQueue(false, 'assets/images/');
+	var panelX, panelY, panelHeight, panelWidth; 	
 
-	preload.on('complete', onComplete);
+	var oldFigureContainerY, newFigureContainerY;
 
-	manifest = [
-		{id: colors[0], src: 'block_blue.png'},
-		{id: colors[1], src:'block_green.png'},
-		{id: colors[2], src: 'block_red.png'},
-		{id: colors[3], src: 'block_yellow.png'}
-	];
-	
-	preload.loadManifest(manifest);
+	var timelineGeneral;
 
-	var tweenfigureContainerCurrentY;	
 
-	var oldY;
-	var newY;
 /*
 	 ██████╗ ██████╗ ███╗   ███╗██████╗ ██╗     ███████╗████████╗███████╗
 	██╔════╝██╔═══██╗████╗ ████║██╔══██╗██║     ██╔════╝╚══██╔══╝██╔════╝
@@ -52,28 +42,28 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 
 */
 	function onComplete(){
-		canvas = document.getElementById('gameCanvas');
+		canvas = document.getElementById('gameCanvas');		
 		stage = new createjs.Stage(canvas);
  
 		populateAM();
  
 		glassContainer = new createjs.Container();
 		glassContainer.x = lineWidth;
-		var width = SQUARE_SIZE * GLASS_WIDTH;
-		var height = SQUARE_SIZE * GLASS_HEIGHT;
-		glassContainer.cache(0, 0, width, height);
- 
-		figureContainerCurrent = new createjs.Container();
 
+		particleContainer = new createjs.Container();
+		particleContainer.x = lineWidth;
+		 
+		figureContainerCurrent = new createjs.Container();
 		figureContainerNext = new createjs.Container();
 		
-		background = createBackground();
+		background = createBackground();		
 		background.cache(0, 0, canvas.width, canvas.height);		
  
-		stage.addChild(background, glassContainer, figureContainerCurrent);	 
-		
+		stage.addChild(background, glassContainer, figureContainerCurrent, particleContainer);	
+
 		createjs.Ticker.on('tick', tick);
 		createjs.Ticker.setFPS(FPS);
+
 		$scope.trigger(scope.LOADED);
    }
 
@@ -81,16 +71,16 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
    		stats.begin();   		
    		stage.update();
    		stats.end();
-
    }
 
 	function populateAM(){
-		for(var i = 0; i < colors.length; i++){
-			AM.addItem(colors[i], (function(index){
+		for(var i = 0; i < resources.colors.length; i++){
+			AM.addItem(resources.colors[i], (function(index){
 				return function(){
-					return new createjs.Bitmap(preload.getResult(colors[index]))
+					var object = new createjs.Bitmap(resources.preload.getResult(resources.colors[index]));					
+					return object;
 				}				
-			})(i), 20);
+			})(i), 50);
 		}
 	}
 /*
@@ -149,7 +139,7 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 		g.beginFill("black");
 		g.drawRect(panelX, panelY, panelWidth, panelHeight);
 
-		var nextText = new createjs.Text('NEXT', "25px Arial", 'yellow' )
+		var nextText = new createjs.Text('NEXT', "25px Arial", 'yellow' );
 		nextText.x = panelX + panelWidth / 2;
 		nextText.y = panelHeight - 6 * SQUARE_SIZE - lineWidth;
 		nextText.textAlign = 'center';
@@ -160,8 +150,17 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 
 		return background;
 	}
+
+	/*
+	██████╗ ██╗   ██╗██████╗ ██╗     ██╗ ██████╗
+	██╔══██╗██║   ██║██╔══██╗██║     ██║██╔════╝
+	██████╔╝██║   ██║██████╔╝██║     ██║██║     
+	██╔═══╝ ██║   ██║██╔══██╗██║     ██║██║     
+	██║     ╚██████╔╝██████╔╝███████╗██║╚██████╗
+	╚═╝      ╚═════╝ ╚═════╝ ╚══════╝╚═╝ ╚═════╝                                            
+	*/
  
-	scope.update = function(figure_current, figure_next){		
+	scope.update = function(figure_current){		
 		setBlocks();
 		setCurrentFigure(figure_current);				
 		stage.update();
@@ -170,19 +169,33 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 	scope.reset = function(){
 		// for each block in glass
 		while(glassContainer.numChildren > 0){
-			var child = glassContainer.getChildAt(0);
-			child.needsUpdate = false;
-			scope.removeBlockFromGlass(child);
+			var child = glassContainer.getChildAt(0);					
+			scope.removeBlockFromGlass(child, false);
 		}
 		// for each block in figure
 		while(figureContainerCurrent.numChildren > 0){
 			var child = figureContainerCurrent.getChildAt(0);
+			TweenLite.killTweensOf(child);		
 			figureContainerCurrent.removeChild(child);
 			AM.put(child);
+		}
+
+		// for each particle block
+		while(particleContainer.numChildren > 0){
+			var child = particleContainer.getChildAt(0);			
+			removeParticle(child);
 		}
  
 		stage.update();
 	};
+
+	scope.pause = function(toPause){
+		if(toPause){
+			timelineGeneral = TimelineLite.exportRoot();				
+			timelineGeneral.pause();
+		}
+		else if(timelineGeneral != undefined) timelineGeneral.resume();
+	}
 
 	/*
 	 ██████╗ ██████╗ ███╗   ██╗████████╗ █████╗ ██╗███╗   ██╗███████╗██████╗ ███████╗
@@ -193,38 +206,67 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 	 ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝╚══════╝	
 	*/
  
-	scope.addBlockToGlass = function(block){
-		glassContainer.addChild(block);		
-	};
- 
-	scope.removeBlockFromGlass = function(block){
-		glassContainer.removeChild(block);
-		AM.put(block);
-	};
- 
-	scope.addCurrentFigure = function(figure){		
-		figureContainerCurrent.y = figure.position.y * SQUARE_SIZE;
-		figureContainerCurrent.x = figure.position.x * SQUARE_SIZE;
+	scope.addBlockToGlass = function(block, glass){		
+ 		block.needsUpdate = false;			
 
-		addBlocksToFigureContainer(figure, figureContainerCurrent);		
-		
+ 		// var newY = SQUARE_SIZE * block.row;
+ 		// var distanceY = Math.abs(block.y - newY);								
+ 		
+ 		block.x = SQUARE_SIZE * block.column;
+ 		block.y = SQUARE_SIZE * block.row;
+
+ 		// if block is falling on something 		 		
+ 		if(block.row + 1 >= GLASS_HEIGHT || glass[block.row + 1][block.column]){
+ 			createParticles(block); 	
+ 		}
+
+ 		shakeGlass();
+ 	
+ 		glassContainer.addChild(block);		
+	};
+ 
+	scope.removeBlockFromGlass = function(block, animated=true){				
+ 		block.needsUpdate = false;	
+
+ 		TweenLite.killTweensOf(block);	
+
+ 		if(animated) animateBlockDestruction(block);
+ 		else{
+  			block.alpha = 1;
+  			glassContainer.removeChild(block);
+  			AM.put(block);
+  		}	  		
+	};
+ 
+	scope.addCurrentFigure = function(figure){					
+		TweenLite.killTweensOf(figureContainerCurrent);
+		figureContainerCurrent.y = figure.position.y * SQUARE_SIZE;
+		figureContainerCurrent.x = figure.position.x * SQUARE_SIZE + lineWidth;
+
+		oldFigureContainerY = figureContainerCurrent.y;
+
+		addBlocksToFigureContainer(figure, figureContainerCurrent);				
 	};
 
 
 	scope.addNextFigure = function(figure){
-		var centerX = figure.states[figure.phase].matrix[0].length / 2 * SQUARE_SIZE
+		var width = figure.states[figure.phase].matrix[0].length;
+		var height = figure.states[figure.phase].matrix.length;
+		var difX = (width / 2 - Math.floor(width / 2)) * SQUARE_SIZE;
+		var difY = (height / 2 - Math.floor(height / 2)) * SQUARE_SIZE;
 
-		figureContainerNext.x = panelX + panelWidth / 2 - centerX;		
-		figureContainerNext.y = panelHeight - SQUARE_SIZE * 4;		
+		figureContainerNext.x = panelX + panelWidth / 2 - difX;		
+		figureContainerNext.y = panelHeight - SQUARE_SIZE * 3 - difY;		
 		
 		addBlocksToFigureContainer(figure, figureContainerNext);
 		setBlocksInContainer(figure, figureContainerNext);		
 
 		background.updateCache();
-	}
+	};
 
 	function addBlocksToFigureContainer(figure, figureContainer){
 		var matrix = figure.states[figure.phase].matrix;
+
 		for(var i = 0; i < matrix.length; i++){
 			for(var j = 0; j < matrix[0].length; j++){
 				var obj = matrix[i][j];
@@ -238,13 +280,16 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 	function setBlocks(){
 		for(var i = 0; i < glassContainer.numChildren; i++){
 			var child = glassContainer.getChildAt(i);
+
 			if(child.needsUpdate){
-				child.needsUpdate = false;				
-				child.x = SQUARE_SIZE * child.column;
-				child.y = SQUARE_SIZE * child.row;
+				child.needsUpdate = false;	
+
+				var newY = SQUARE_SIZE * child.row;
+				
+				TweenLite.killTweensOf(child);
+				TweenLite.to(child, 0.5, { y : newY, ease: Power0.easeNone, delay: 0.3} );			
 			}
 		}
-		glassContainer.updateCache();
 	}
  
 	function setCurrentFigure(figure){
@@ -253,45 +298,127 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 		var centerX = figure.states[figure.phase].center[0];
 		var centerY = figure.states[figure.phase].center[1];
 		
-		figureContainerCurrent.x = lineWidth + (figure.position.x - centerX) * SQUARE_SIZE;		
+		figureContainerCurrent.x = figure.position.x * SQUARE_SIZE + lineWidth;	
 
-		var newY = (figure.position.y) * SQUARE_SIZE;
+		var newFigureContainerY = (figure.position.y) * SQUARE_SIZE;
+
+		if(oldFigureContainerY === undefined) oldY = figureContainerCurrent.y;
 		
 		// if the target Y has changed create new tween
-		if(oldY !== newY){ 
-			// kill tween
-			if(tweenfigureContainerCurrentY) tweenfigureContainerCurrentY.kill();
-			var distanceY = Math.abs(figure.position.y * SQUARE_SIZE - figureContainerCurrent.y);
+		if(oldFigureContainerY !== newFigureContainerY){ 	
+			var distanceY = Math.abs(figure.position.y * SQUARE_SIZE - figureContainerCurrent.y);	
 
-			// speed up
-			if(distanceY > SQUARE_SIZE){
-				tweenfigureContainerCurrentY = TweenLite.to(figureContainerCurrent, 1 / distanceY * SQUARE_SIZE, { y : newY, ease: Power1.easeOut} );
-			}
-			else{ 
-				tweenfigureContainerCurrentY = TweenLite.to(figureContainerCurrent, 1 / distanceY * SQUARE_SIZE, { y : newY, ease:Power1.easeInOut} );						
-			}						
+			TweenLite.killTweensOf(figureContainerCurrent);
+ 			TweenLite.fromTo(figureContainerCurrent, 1.1, { y: oldFigureContainerY }, { y: newFigureContainerY,  ease: Power1.easeInOut } );	
 		}	
-		oldY = newY;
+		oldFigureContainerY = newFigureContainerY;
  		setBlocksInContainer(figure, figureContainerCurrent);
 		
 	}	
 
-	function setBlocksInContainer(figure, figureContainer){
-		var index = 0; 
+	function setBlocksInContainer(figure, figureContainer){		
 		var matrix = figure.states[figure.phase].matrix;
 		var centerX = figure.states[figure.phase].center[0];
 		var centerY = figure.states[figure.phase].center[1];
- 
-		// child index 		
+ 		 		
 		for(var i = 0; i < matrix.length; i++){
 			for(var j = 0; j < matrix[i].length; j++){
-				if(matrix[i][j]){					
-					var child = figureContainer.getChildAt(index);
-					child.x = j * SQUARE_SIZE;					
-					child.y = (i - centerY) * SQUARE_SIZE;								
-					index++;
+				if(matrix[i][j]){													
+					matrix[i][j].x = (j - centerX) * SQUARE_SIZE;					
+					matrix[i][j].y = (i - centerY) * SQUARE_SIZE;
 				}
 			}
 		}
+	}
+
+	/*
+ █████╗ ███╗   ██╗██╗███╗   ███╗ █████╗ ████████╗██╗ ██████╗ ███╗   ██╗
+██╔══██╗████╗  ██║██║████╗ ████║██╔══██╗╚══██╔══╝██║██╔═══██╗████╗  ██║
+███████║██╔██╗ ██║██║██╔████╔██║███████║   ██║   ██║██║   ██║██╔██╗ ██║
+██╔══██║██║╚██╗██║██║██║╚██╔╝██║██╔══██║   ██║   ██║██║   ██║██║╚██╗██║
+██║  ██║██║ ╚████║██║██║ ╚═╝ ██║██║  ██║   ██║   ██║╚██████╔╝██║ ╚████║
+╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝╚═╝     ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝
+                                                                       
+	*/
+
+	function createParticles(block){
+		for(var i = 0; i < 3; i++){			
+	 		var clone = AM.pull(block.AM_index);
+	 		clone.x = block.x;
+	 		clone.y = block.y + SQUARE_SIZE;
+
+	 		var randXStart = Math.random() * SQUARE_SIZE;	
+	 		clone.x += randXStart; 		
+
+	 		var randXTarget = Math.random() * SQUARE_SIZE - SQUARE_SIZE / 2;
+			var randYTarget = Math.random() * SQUARE_SIZE + SQUARE_SIZE / 3;
+
+			var scale = Math.random() * 0.3 + 0.2;	 		
+	 		clone.scaleX = scale;
+	 		clone.scaleY = scale;
+
+	 		particleContainer.addChild(clone); 		
+	 		
+	 		TweenLite.to(clone, 1.0, 
+	 			{x: "+=" + randXTarget,
+	 			 y: "-=" + randYTarget,
+	 			 alpha: 0,
+	 			 scaleY: 0,
+	 			 scaleX: 0,
+	 			 onComplete: function(clone){ return function(){removeParticle(clone)} }(clone)
+	 			}
+	 		);
+ 		}
+	}
+
+	function removeParticle(block){		
+		
+		TweenLite.killTweensOf(block);		
+		// back to default
+		block.scaleX = 1;
+		block.scaleY = 1;		
+		block.alpha = 1;
+
+		particleContainer.removeChild(block);
+		AM.put(block);
+
+	}
+
+	function shakeGlass(){
+		TweenLite.to(glassContainer, .1, {
+		    y: "+7",
+		    ease: Quad.easeInOut
+		});
+		TweenLite.to(glassContainer, .2, {
+		    y: "+0",		   
+		    delay: .1,
+		    ease: Quad.easeInOut
+		});				
+	}
+
+	function animateBlockDestruction(block){		
+  		TweenLite.to(block, 1, 
+  			{ y : "+=" + SQUARE_SIZE,
+  			  alpha: 0,  			  
+  			  onComplete: function(){
+  			  	  block.alpha = 1;
+  			 	  glassContainer.removeChild(block);
+  			 	  AM.put(block);
+  			 	}
+  			}
+  		);  		
+	}
+
+	scope.animateGameOver = function(){
+		for(var i = 0; i < glassContainer.numChildren; i++){
+			var child = glassContainer.getChildAt(i);
+			TweenLite.killTweensOf(child);
+		}		
+		var tl = new TimelineLite();
+		tl.staggerTo(glassContainer.children, 1, 
+			{
+				y: GLASS_HEIGHT * SQUARE_SIZE * 1.5 
+			},
+			-0.05);		
 	}
 };

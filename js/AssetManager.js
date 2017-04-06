@@ -20,8 +20,7 @@ var AssetManager = function() {
 
         scope.types[name] = index;
 
-        if(collection[index] == undefined){
-            console.log(genFunc);
+        if(collection[index] == undefined){            
             collection[index] = 
             {   
                 name: name,
@@ -37,8 +36,7 @@ var AssetManager = function() {
         }
     };
 
-    scope.pull = function(index){
-        console.log(collection);
+    scope.pull = function(index){        
         if(index >= Object.keys(scope.types).length) return;
 
         if(collection[index].array.length < 1){            
