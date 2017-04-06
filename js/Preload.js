@@ -18,7 +18,8 @@ var Preload = function(callback){
 		{id: colors[0], src: 'images/block_blue.png'},
 		{id: colors[1], src:'images/block_green.png'},
 		{id: colors[2], src: 'images/block_red.png'},	
-		{id: colors[3], src: 'images/block_yellow.png'},		
+		{id: colors[3], src: 'images/block_yellow.png'},
+		{id: 'snowflake', src: 'images/snowflake.png'}
 	];	
 
 	sounds = [
