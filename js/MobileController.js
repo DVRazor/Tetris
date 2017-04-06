@@ -9,8 +9,8 @@ function MobileController(){
 	var lastKey;
 
 	function handleTouchStart(evt){
-		xDown = evt.touches[0].clientX;                                      
-		yDown = evt.touches[0].clientY;   	                                
+		xDown = evt.touches[0].clientX;
+		yDown = evt.touches[0].clientY;
 	};        
 
 	function handleTouchMove(evt) {
