@@ -23,13 +23,15 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 
 	var background, glassContainer, figureContainerCurrent, figureContainerNext; 
 
-	var text, particleContainer;  
+	var text, particleContainer, snowContainer;  
 
 	var panelX, panelY, panelHeight, panelWidth; 	
 
 	var oldFigureContainerY, newFigureContainerY;
 
 	var timelineGeneral;
+
+	var CPM // particle manager
 
 
 /*
@@ -43,7 +45,7 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 */
 	function onComplete(){
 		canvas = document.getElementById('gameCanvas');		
-		stage = new createjs.Stage(canvas);
+		stage = new createjs.Stage(canvas);		
  
 		populateAM();
  
@@ -57,9 +59,17 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 		figureContainerNext = new createjs.Container();
 		
 		background = createBackground();		
-		background.cache(0, 0, canvas.width, canvas.height);		
+		background.cache(0, 0, canvas.width, canvas.height);	
+
+		snowContainer = new createjs.Container();	
  
-		stage.addChild(background, glassContainer, figureContainerCurrent, particleContainer);	
+		stage.addChild(snowContainer, background, glassContainer, figureContainerCurrent, particleContainer);	
+
+
+		CPM = new CreatejsParticleManager(AM);
+		CPM.addType('snow', controlSnow);
+
+		CPM.addType('blockParticle', controlBlockParticle);
 
 		createjs.Ticker.on('tick', tick);
 		createjs.Ticker.setFPS(FPS);
@@ -68,20 +78,45 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
    }
 
    function tick(){   		
-   		stats.begin();   		
+   		stats.begin(); 
+   		if(Math.random() < 0.2){	
+   			addSnowflake();
+   		}    	   		
    		stage.update();
    		stats.end();
    }
 
-	function populateAM(){
+	function populateAM(){		
+		AM.addItem(
+			'snowflake',
+			function(){
+				var object = new createjs.Bitmap(resources.preload.getResult('snowflake'));					
+				return object;					
+			},
+			500,
+			function(){				
+				this.alpha = 1;
+				this.scaleX = 1;
+				this.scaleY = 1
+			});
+		
 		for(var i = 0; i < resources.colors.length; i++){
-			AM.addItem(resources.colors[i], (function(index){
-				return function(){
-					var object = new createjs.Bitmap(resources.preload.getResult(resources.colors[index]));					
-					return object;
-				}				
-			})(i), 50);
-		}
+			AM.addItem(
+				resources.colors[i],
+				(function(index){
+					return function(){
+						var object = new createjs.Bitmap(resources.preload.getResult(resources.colors[index]));					
+						return object;
+					}				
+				})(i),
+				50,
+				function(){					
+					this.alpha = 1;
+					this.scaleX = 1;
+					this.scaleY = 1
+				}
+			);
+		}		
 	}
 /*
 	██████╗  ██████╗ 
@@ -183,7 +218,7 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 		// for each particle block
 		while(particleContainer.numChildren > 0){
 			var child = particleContainer.getChildAt(0);			
-			removeParticle(child);
+			CPM.removeParticle(child);
 		}
  
 		stage.update();
@@ -209,15 +244,13 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 	scope.addBlockToGlass = function(block, glass){		
  		block.needsUpdate = false;			
 
- 		// var newY = SQUARE_SIZE * block.row;
- 		// var distanceY = Math.abs(block.y - newY);								
- 		
  		block.x = SQUARE_SIZE * block.column;
  		block.y = SQUARE_SIZE * block.row;
 
  		// if block is falling on something 		 		
  		if(block.row + 1 >= GLASS_HEIGHT || glass[block.row + 1][block.column]){
- 			createParticles(block); 	
+ 			// createParticles(block); 	
+ 			createBlockParticles(block);
  		}
 
  		shakeGlass();
@@ -341,49 +374,7 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
                                                                        
 	*/
 
-	function createParticles(block){
-		for(var i = 0; i < 3; i++){			
-	 		var clone = AM.pull(block.AM_index);
-	 		clone.x = block.x;
-	 		clone.y = block.y + SQUARE_SIZE;
-
-	 		var randXStart = Math.random() * SQUARE_SIZE;	
-	 		clone.x += randXStart; 		
-
-	 		var randXTarget = Math.random() * SQUARE_SIZE - SQUARE_SIZE / 2;
-			var randYTarget = Math.random() * SQUARE_SIZE + SQUARE_SIZE / 3;
-
-			var scale = Math.random() * 0.3 + 0.2;	 		
-	 		clone.scaleX = scale;
-	 		clone.scaleY = scale;
-
-	 		particleContainer.addChild(clone); 		
-	 		
-	 		TweenLite.to(clone, 1.0, 
-	 			{x: "+=" + randXTarget,
-	 			 y: "-=" + randYTarget,
-	 			 alpha: 0,
-	 			 scaleY: 0,
-	 			 scaleX: 0,
-	 			 onComplete: function(clone){ return function(){removeParticle(clone)} }(clone)
-	 			}
-	 		);
- 		}
-	}
-
-	function removeParticle(block){		
-		
-		TweenLite.killTweensOf(block);		
-		// back to default
-		block.scaleX = 1;
-		block.scaleY = 1;		
-		block.alpha = 1;
-
-		particleContainer.removeChild(block);
-		AM.put(block);
-
-	}
-
+	
 	function shakeGlass(){
 		TweenLite.to(glassContainer, .1, {
 		    y: "+7",
@@ -421,4 +412,84 @@ var Render = function(GLASS_WIDTH, GLASS_HEIGHT, lineWidth){
 			},
 			-0.05);		
 	}
+
+	/*
+██████╗  █████╗ ██████╗ ████████╗██╗ ██████╗██╗     ███████╗███████╗
+██╔══██╗██╔══██╗██╔══██╗╚══██╔══╝██║██╔════╝██║     ██╔════╝██╔════╝
+██████╔╝███████║██████╔╝   ██║   ██║██║     ██║     █████╗  ███████╗
+██╔═══╝ ██╔══██║██╔══██╗   ██║   ██║██║     ██║     ██╔══╝  ╚════██║
+██║     ██║  ██║██║  ██║   ██║   ██║╚██████╗███████╗███████╗███████║
+╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═╝ ╚═════╝╚══════╝╚══════╝╚══════╝
+                                                                    
+	*/
+
+	// SNOW
+
+	var addSnowflake = function(){		
+		var snowflake = AM.pull(AM.types["SNOWFLAKE"]); 
+
+   		CPM.addParticle('snow',
+				snowflake,	
+				initSnowParticle,
+				snowContainer				
+		);			
+	};
+
+	var controlSnow = function(){	
+		this.y += this.speed;
+		this.x += this.sign *  Math.sin(this.counter) * this.speed;
+		this.counter += 0.01;				
+
+		// destroy
+		if(this.y > GLASS_HEIGHT * SQUARE_SIZE){	
+			return true;
+		}
+	};	
+
+	var initSnowParticle = function(){		 
+		this.speed = Math.random() * 0.6 + 0.1;
+		this.counter = Math.random() * Math.PI - Math.PI / 2;
+		this.sign = Math.random() < 0.5 ? -1 : 1;
+		this.x = GLASS_WIDTH * SQUARE_SIZE * Math.random();
+		this.y = -SQUARE_SIZE;						
+		this.scaleX = this.scaleY = Math.random() * 0.2 + 0.1;
+	}
+
+	// BLOCK PARTICLES
+
+	function createBlockParticles(block){					
+		for(var i = 0; i < 3; i++){
+			var particle = AM.pull(block.AM_index); 
+	   		CPM.addParticle('blockParticle',
+					particle,	
+					initBlockParticle(block),
+					particleContainer				
+			);			
+   		}
+	}
+
+	function initBlockParticle(block){		
+		return function(){			
+			this.x = block.x;
+			this.y = block.y + SQUARE_SIZE;
+			this.alpha = 1;
+			this.speed = 0.01;
+			var randXStart = Math.random() * SQUARE_SIZE;	
+	 		this.x += randXStart; 			 		
+
+			var scale = Math.random() * 0.3 + 0.2;	 		
+	 		this.scaleX = this.scaleY = scale;
+		}
+ 	}
+
+	function controlBlockParticle(){
+		var randOffsetX = Math.random() * SQUARE_SIZE - SQUARE_SIZE / 2;
+		var randOffsetY = Math.random() * SQUARE_SIZE + SQUARE_SIZE / 3;
+ 		this.x += randOffsetX * this.speed * 3;
+ 		this.y -= randOffsetY * this.speed * 3;
+ 		this.alpha -= this.speed;
+ 		this.scaleX = this.scaleY -= this.speed; 				 		
+
+ 		if(this.scaleX <= 0 || this.scaleY <= 0) return true;
+ 	}
 };
