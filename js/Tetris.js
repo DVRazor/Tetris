@@ -446,7 +446,7 @@ function Tetris(){
 		render.update();
 	}
 
-	function moveFigure(x, y, phase){
+	function moveFigure(x, y, phase, animated = true){
 		if(!figure_current) return;
 
 		if(phase === undefined)
@@ -469,14 +469,14 @@ function Tetris(){
 		figure_current.position.y += y;
 		figure_current.phase = phase;
 
-		render.update(figure_current);
+		if(animated) render.update(figure_current);
 
 		return true;
 	}
 
 	function dropFigure(){
 		while(true){				
-			var hasMoved = moveFigure(0, 1);
+			var hasMoved = moveFigure(0, 1, undefined, false);
 			if(hasMoved) continue;						
 			return;
 		}
