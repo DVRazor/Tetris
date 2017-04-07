@@ -5,41 +5,53 @@ var ParticleManager = function(){
 
 	var particleTypes = {};
 
+	scope.types = {};
+
 	var stepTimer;
 
 	var FPS = 60;
 
 	var STEP_INTERVAL = 1000 / FPS;
+	
+	scope.addType = function(typeName, init, behaviourFunc){		
+		typeName = typeName.toUpperCase();
 
-	var counter = 0;
+		// save index of this type
+		var index = scope.types[typeName];
+		if(index === undefined){
+		   index = Object.keys(scope.types).length;
+		}
+		scope.types[typeName] = scope.types[typeName] || index;
 
-	scope.addType = function(typeName, behaviourFunc){
-		particleTypes[typeName] = particleTypes[typeName] || {};
-		particleTypes[typeName].behaviourFunc = behaviourFunc;		
-	}
+		// save particle type and its props by index
+		particleTypes[index] = particleTypes[index] || {};
+		particleTypes[index].behaviourFunc = behaviourFunc;
+		particleTypes[index].init = init;
+	};
 
-	scope.addParticle = function(type, obj, init){			
-		obj['PM_type'] = type;
-		init.call(obj);
-		particleCollection.push(obj);
-	}
+	scope.addParticle = function(index, params){
+		var particle = particleTypes[index].init(params);
 
-	scope.removeParticle = function(particle){				
+		particle.PM_index = index;		
+
+		particleCollection.push(particle);
+		
+		return particle;
+	};
+
+	scope.removeParticle = function(particle){
 		var index = particleCollection.indexOf(particle);
-		if(index !== -1) particleCollection.splice(index, 1);	
-		// debugger;	
-	}
+		if(index !== -1) particleCollection.splice(index, 1);
+	};
 
-	var step = function(){
-		clearInterval(stepTimer);		
+	function step(){	
+		clearInterval(stepTimer);
 
-		stepTimer = setInterval(function(){						
+		stepTimer = setInterval(function(){
 			for(var i = 0; i < particleCollection.length; i++){
 				var particle = particleCollection[i];
-
-				var type = particle.PM_type;
-
-				var behaviourFunc = particleTypes[type].behaviourFunc; 				
+				var index = particle.PM_index;
+				var behaviourFunc = particleTypes[index].behaviourFunc;
 
 				// if particle has died 
 				if(behaviourFunc.call(particle)) scope.removeParticle(particle);
@@ -47,5 +59,11 @@ var ParticleManager = function(){
 		}, STEP_INTERVAL);
 	}
 
-	step();
+	scope.stop = function(){
+		clearInterval(stepTimer);
+	}
+
+	scope.start = function(){
+		step();
+	}
 }
