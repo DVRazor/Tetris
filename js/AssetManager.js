@@ -25,8 +25,7 @@ var AssetManager = function() {
             {   
                 name: name,
                 func : genFunc,
-                array: [],
-                resetFunc : resetFunc
+                array: []                
             };
         }        
 
@@ -48,10 +47,7 @@ var AssetManager = function() {
 
     };
 
-    scope.put = function(object){
-        if(collection[object.AM_index].resetFunc){
-         collection[object.AM_index].resetFunc.call(object);         
-        }
+    scope.put = function(object){        
         collection[object.AM_index].array.push(object);
     };
 };    
